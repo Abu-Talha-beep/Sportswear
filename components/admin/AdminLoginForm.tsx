@@ -1,7 +1,18 @@
 'use client';
 
 import { FormEvent, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
+
+function getSafeNextPath(nextPath: string | null): string {
+  if (!nextPath) return '/admin';
+
+  // Allow only in-app admin paths to avoid open redirects.
+  if (!nextPath.startsWith('/admin')) {
+    return '/admin';
+  }
+
+  return nextPath;
+}
 
 export function AdminLoginForm() {
   const [email, setEmail] = useState('');
@@ -9,6 +20,7 @@ export function AdminLoginForm() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -28,7 +40,8 @@ export function AdminLoginForm() {
         return;
       }
 
-      router.replace('/admin');
+      const nextPath = getSafeNextPath(searchParams.get('next'));
+      router.replace(nextPath);
       router.refresh();
     } finally {
       setLoading(false);
@@ -39,7 +52,7 @@ export function AdminLoginForm() {
     <div className="min-h-screen bg-[linear-gradient(160deg,#0f172a_0%,#111827_45%,#1f2937_100%)] px-4 py-12 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-md rounded-3xl border border-white/10 bg-white/95 p-8 shadow-2xl">
         <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted">Your Club Stash</p>
-        <h1 className="mt-2 font-[var(--font-heading)] text-4xl font-bold uppercase text-primary">Admin Login</h1>
+        <h1 className="mt-2 font-(--font-heading) text-4xl uppercase text-primary">Admin Login</h1>
         <p className="mt-2 text-sm text-muted">Sign in with your staff credentials to access the operations dashboard.</p>
 
         <form className="mt-8 space-y-4" onSubmit={handleSubmit}>

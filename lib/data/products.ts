@@ -572,3 +572,77 @@ export async function getOutletProductsAsync(): Promise<Product[]> {
   if (dbProducts !== null) return dbProducts;
   return products.filter((p) => p.badge === 'sale');
 }
+
+export async function getProductsBySportAsync(sport: string): Promise<Product[]> {
+  const dbProducts = await fetchProductsBySportFromDB(sport);
+  if (dbProducts !== null) return dbProducts;
+
+  // Fallback: filter by club sport (mock data doesn't have sport-tagged products)
+  const sportClubs = [
+    { slug: 'rugby', name: 'Rugby' },
+    { slug: 'football', name: 'Football' },
+    { slug: 'netball', name: 'Netball' },
+  ];
+  const sportClub = sportClubs.find(
+    (sc) => sc.slug.toLowerCase() === sport.toLowerCase()
+  );
+  if (!sportClub) return [];
+
+  return products.filter((p) => p.clubSlug === sportClub.slug);
+}
+
+async function fetchProductsBySportFromDB(
+  sport: string
+): Promise<Product[] | null> {
+  try {
+    const { isSupabaseConfigured, getSupabaseAdminClient } = await import(
+      '@/lib/supabase/server'
+    );
+    if (!isSupabaseConfigured()) return null;
+
+    const sb = getSupabaseAdminClient();
+
+    // First, get all clubs for this sport
+    const { data: clubsData, error: clubsError } = await sb
+      .from('clubs')
+      .select('id, name, slug')
+      .eq('sport', sport)
+      .eq('is_active', true);
+
+    if (clubsError || !clubsData || clubsData.length === 0) return null;
+
+    const clubIds = clubsData.map((c: any) => c.id);
+
+    // Get all products for these clubs
+    const { data: productsData, error: productsError } = await sb
+      .from('products')
+      .select('*, clubs(name, slug)')
+      .in('club_id', clubIds)
+      .eq('is_active', true)
+      .order('sort_order', { ascending: true });
+
+    if (productsError || !productsData) return null;
+
+    return productsData.map((row: any) => ({
+      id: row.id,
+      slug: row.slug,
+      name: row.name,
+      price: Number(row.price),
+      originalPrice: row.original_price
+        ? Number(row.original_price)
+        : undefined,
+      category: row.category_slug || '',
+      clubSlug: row.clubs?.slug || '',
+      images: row.images || [],
+      sizes: row.sizes || [],
+      colors: row.colors || [],
+      description: row.description || '',
+      badge: row.badge || undefined,
+      inStock: row.in_stock ?? true,
+      rating: row.rating ? Number(row.rating) : undefined,
+      reviews: row.review_count || 0,
+    }));
+  } catch {
+    return null;
+  }
+}

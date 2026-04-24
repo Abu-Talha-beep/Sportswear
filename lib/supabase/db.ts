@@ -172,6 +172,17 @@ export async function dbUpdateOrderStatus(id: string, updates: Record<string, un
   return data;
 }
 
+export async function dbGetCustomerOrderRows() {
+  const sb = getSupabaseAdminClient();
+  const { data, error } = await sb
+    .from('orders')
+    .select('id,customer_name,customer_email,total,created_at,shipping_address')
+    .order('created_at', { ascending: false });
+
+  if (error) throw new Error(`dbGetCustomerOrderRows: ${error.message}`);
+  return data ?? [];
+}
+
 // ─── CATEGORIES ───
 
 export async function dbGetCategories() {
@@ -184,6 +195,63 @@ export async function dbGetCategories() {
 
   if (error) throw new Error(`dbGetCategories: ${error.message}`);
   return data ?? [];
+}
+
+export async function dbGetAllCategories() {
+  const sb = getSupabaseAdminClient();
+  const { data, error } = await sb
+    .from('categories')
+    .select('*')
+    .order('sort_order', { ascending: true });
+
+  if (error) throw new Error(`dbGetAllCategories: ${error.message}`);
+  return data ?? [];
+}
+
+export async function dbCreateCategory(category: Record<string, unknown>) {
+  const sb = getSupabaseAdminClient();
+  const { data, error } = await sb
+    .from('categories')
+    .insert(category)
+    .select()
+    .single();
+
+  if (error) throw new Error(`dbCreateCategory: ${error.message}`);
+  return data;
+}
+
+export async function dbUpdateCategory(id: string, category: Record<string, unknown>) {
+  const sb = getSupabaseAdminClient();
+  const { data, error } = await sb
+    .from('categories')
+    .update(category)
+    .eq('id', id)
+    .select()
+    .single();
+
+  if (error) throw new Error(`dbUpdateCategory: ${error.message}`);
+  return data;
+}
+
+export async function dbDeleteCategory(id: string) {
+  const sb = getSupabaseAdminClient();
+
+  // Look up the category slug so we can unlink products
+  const { data: cat } = await sb.from('categories').select('slug').eq('id', id).maybeSingle();
+  if (!cat) {
+    throw new Error('Category not found.');
+  }
+
+  // Unlink products that reference this category
+  await sb.from('products').update({ category_slug: null }).eq('category_slug', cat.slug);
+
+  // Now delete the category
+  const { data, error } = await sb.from('categories').delete().eq('id', id).select();
+
+  if (error) throw new Error(`dbDeleteCategory: ${error.message}`);
+  if (!data || data.length === 0) {
+    throw new Error('Category could not be deleted.');
+  }
 }
 
 // ─── SITE CONTENT ───

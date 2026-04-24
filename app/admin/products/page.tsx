@@ -24,15 +24,26 @@ interface Product {
   sort_order: number;
 }
 
+interface CategoryOption {
+  slug: string;
+  name: string;
+}
+
 const EMPTY_PRODUCT: Product = {
   slug: '', name: '', description: '', price: 0, original_price: null,
   category_slug: 'activewear', club_id: null, sizes: [], colors: [],
   images: [], badge: null, in_stock: true, stock_count: 100, is_active: true, sort_order: 0,
 };
 
-const CATEGORIES = [
-  'activewear', 'leisurewear', 'fashionwear', 'playerequipment',
-  'rugbygear', 'pvidapadel', 'gift-cards', 'outlet',
+const CATEGORY_FALLBACKS: CategoryOption[] = [
+  { slug: 'activewear', name: 'activewear' },
+  { slug: 'leisurewear', name: 'leisurewear' },
+  { slug: 'fashionwear', name: 'fashionwear' },
+  { slug: 'playerequipment', name: 'playerequipment' },
+  { slug: 'rugbygear', name: 'rugbygear' },
+  { slug: 'pvidapadel', name: 'pvidapadel' },
+  { slug: 'gift-cards', name: 'gift-cards' },
+  { slug: 'outlet', name: 'outlet' },
 ];
 
 const BADGES = ['', 'new', 'sale', 'featured', 'top'];
@@ -42,10 +53,24 @@ export default function AdminProductsPage() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [catFilter, setCatFilter] = useState('');
+  const [categories, setCategories] = useState<CategoryOption[]>(CATEGORY_FALLBACKS);
   const [editing, setEditing] = useState<Product | null>(null);
   const [saving, setSaving] = useState(false);
   const [sizeInput, setSizeInput] = useState('');
   const [colorInput, setColorInput] = useState('');
+
+  const fetchCategories = useCallback(async () => {
+    try {
+      const res = await fetch('/api/admin/categories');
+      const data = await res.json();
+      if (res.ok && Array.isArray(data.categories)) {
+        setCategories(data.categories.map((category: { slug: string; name: string }) => ({
+          slug: category.slug,
+          name: category.name,
+        })));
+      }
+    } catch { /* empty */ }
+  }, []);
 
   const fetchProducts = useCallback(async () => {
     setLoading(true);
@@ -62,6 +87,9 @@ export default function AdminProductsPage() {
 
   // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { fetchProducts(); }, [fetchProducts]);
+
+  // eslint-disable-next-line react-hooks/set-state-in-effect
+  useEffect(() => { fetchCategories(); }, [fetchCategories]);
 
   const handleSave = async () => {
     if (!editing) return;
@@ -223,7 +251,7 @@ export default function AdminProductsPage() {
                 <label className="block text-sm font-semibold text-foreground mb-1">Category *</label>
                 <select value={editing.category_slug} onChange={(e) => setEditing({ ...editing, category_slug: e.target.value })}
                   className="w-full rounded-xl border border-border px-4 py-2.5 text-sm bg-surface-alt">
-                  {CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
+                  {categories.map((c) => <option key={c.slug} value={c.slug}>{c.name}</option>)}
                 </select>
               </div>
 
@@ -281,7 +309,7 @@ export default function AdminProductsPage() {
         <select value={catFilter} onChange={(e) => setCatFilter(e.target.value)}
           className="rounded-xl border border-border px-4 py-2.5 text-sm bg-surface">
           <option value="">All Categories</option>
-          {CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
+          {categories.map((c) => <option key={c.slug} value={c.slug}>{c.name}</option>)}
         </select>
       </div>
 

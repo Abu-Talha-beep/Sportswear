@@ -7,7 +7,11 @@ import Link from 'next/link';
 export const metadata: Metadata = { title: 'The Pride Collection', description: 'Celebrate inclusivity with our vibrant Pride Collection sportswear.' };
 
 export default async function PrideCollectionPage() {
-  const prideProducts = (await getAllProductsAsync()).filter((p) => p.category_slug === 'the-pride-collection' || p.name.toLowerCase().includes('pride'));
+  const prideProducts = (await getAllProductsAsync()).filter(
+    (product) =>
+      product.category === 'fashionwear' &&
+      (product.subcategory === 'pride-collection' || product.name.toLowerCase().includes('pride'))
+  );
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 py-10">
       <nav className="text-sm text-muted mb-6">

@@ -30,6 +30,7 @@ export default function MyAccountPage() {
   const [showRegPassword, setShowRegPassword] = useState(false);
   const [regSuccess, setRegSuccess] = useState('');
   const [regError, setRegError] = useState('');
+  const [authMode, setAuthMode] = useState<'login' | 'register'>('register');
 
   useEffect(() => {
     initialize();
@@ -45,7 +46,9 @@ export default function MyAccountPage() {
       return;
     }
     const success = await login(loginEmail, loginPassword);
-    if (!success) setLoginError(authError || 'Invalid login credentials.');
+    if (!success) {
+      setLoginError(useAuthStore.getState().authError || 'Invalid login credentials.');
+    }
   };
 
   const handleRegister = async (e: React.FormEvent) => {
@@ -63,7 +66,7 @@ export default function MyAccountPage() {
     }
     const success = await register(regEmail, regPassword);
     if (!success) {
-      setRegError(authError || 'Registration failed.');
+      setRegError(useAuthStore.getState().authError || 'Registration failed.');
       return;
     }
     if (!isLoggedIn) {
@@ -83,7 +86,7 @@ export default function MyAccountPage() {
           <div className="w-20 h-20 rounded-full bg-accent/10 flex items-center justify-center mx-auto mb-6">
             <User className="w-10 h-10 text-accent" />
           </div>
-          <h1 className="font-[var(--font-heading)] text-3xl font-bold text-primary uppercase">
+          <h1 className="font-(--font-heading) text-3xl text-primary uppercase">
             Welcome back, {user.name}!
           </h1>
           <p className="text-muted mt-2">{user.email}</p>
@@ -113,10 +116,17 @@ export default function MyAccountPage() {
     );
   }
 
+  const switchAuthMode = (mode: 'login' | 'register') => {
+    setAuthMode(mode);
+    clearAuthError();
+    setLoginError('');
+    setRegError('');
+  };
+
   // Login / Register view
   return (
-    <div className="max-w-5xl mx-auto px-4 sm:px-6 py-16">
-      <h1 className="font-[var(--font-heading)] text-4xl md:text-5xl font-bold text-primary uppercase text-center mb-12">
+    <div className="max-w-2xl mx-auto px-4 sm:px-6 py-16">
+      <h1 className="font-(--font-heading) text-4xl md:text-5xl text-primary uppercase text-center mb-12">
         My Account
       </h1>
 
@@ -124,16 +134,17 @@ export default function MyAccountPage() {
         <p className="text-center text-sm text-muted mb-6">Loading your account...</p>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-        {/* Login */}
-        <motion.div
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
-          className="bg-surface rounded-2xl border border-border-light p-8"
-        >
-          <h2 className="font-[var(--font-heading)] text-2xl font-bold text-primary uppercase mb-6">
-            Login
-          </h2>
+      <motion.div
+        key={authMode}
+        initial={{ opacity: 0, y: 14 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="bg-surface rounded-2xl border border-border-light p-8"
+      >
+        <h2 className="font-(--font-heading) text-2xl text-primary uppercase mb-6 text-center">
+          {authMode === 'login' ? 'Login' : 'Register'}
+        </h2>
+
+        {authMode === 'login' ? (
           <form onSubmit={handleLogin} className="space-y-5">
             <div>
               <label className="text-sm font-semibold text-foreground block mb-2">Email address</label>
@@ -181,83 +192,86 @@ export default function MyAccountPage() {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full py-3.5 bg-accent text-white font-[var(--font-heading)] font-bold text-lg uppercase rounded-xl hover:bg-accent-dark transition-colors"
+              className="w-full py-3.5 bg-accent text-white font-(--font-heading) text-lg uppercase rounded-xl hover:bg-accent-dark transition-colors"
             >
               {isLoading ? 'Logging In...' : 'Log In'}
             </button>
           </form>
-        </motion.div>
-
-        {/* Register */}
-        <motion.div
-          initial={{ opacity: 0, x: 20 }}
-          animate={{ opacity: 1, x: 0 }}
-          className="bg-surface rounded-2xl border border-border-light p-8"
-        >
-          <h2 className="font-[var(--font-heading)] text-2xl font-bold text-primary uppercase mb-6">
-            Register
-          </h2>
-          <form onSubmit={handleRegister} className="space-y-5">
-            <div>
-              <label className="text-sm font-semibold text-foreground block mb-2">Email address</label>
-              <div className="relative">
-                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted" />
-                <input
-                  type="email"
-                  value={regEmail}
-                  onChange={(e) => setRegEmail(e.target.value)}
-                  className="w-full pl-11 pr-4 py-3 bg-surface-alt rounded-xl border border-border focus:border-accent focus:ring-2 focus:ring-accent/20 outline-none text-sm"
-                  placeholder="you@example.com"
-                />
+        ) : (
+          <>
+            <form onSubmit={handleRegister} className="space-y-5">
+              <div>
+                <label className="text-sm font-semibold text-foreground block mb-2">Email address</label>
+                <div className="relative">
+                  <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted" />
+                  <input
+                    type="email"
+                    value={regEmail}
+                    onChange={(e) => setRegEmail(e.target.value)}
+                    className="w-full pl-11 pr-4 py-3 bg-surface-alt rounded-xl border border-border focus:border-accent focus:ring-2 focus:ring-accent/20 outline-none text-sm"
+                    placeholder="you@example.com"
+                  />
+                </div>
               </div>
-            </div>
-            <div>
-              <label className="text-sm font-semibold text-foreground block mb-2">Password</label>
-              <div className="relative">
-                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted" />
-                <input
-                  type={showRegPassword ? 'text' : 'password'}
-                  value={regPassword}
-                  onChange={(e) => setRegPassword(e.target.value)}
-                  className="w-full pl-11 pr-11 py-3 bg-surface-alt rounded-xl border border-border focus:border-accent focus:ring-2 focus:ring-accent/20 outline-none text-sm"
-                  placeholder="At least 8 characters"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowRegPassword(!showRegPassword)}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-muted hover:text-foreground"
-                >
-                  {showRegPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                </button>
+              <div>
+                <label className="text-sm font-semibold text-foreground block mb-2">Password</label>
+                <div className="relative">
+                  <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted" />
+                  <input
+                    type={showRegPassword ? 'text' : 'password'}
+                    value={regPassword}
+                    onChange={(e) => setRegPassword(e.target.value)}
+                    className="w-full pl-11 pr-11 py-3 bg-surface-alt rounded-xl border border-border focus:border-accent focus:ring-2 focus:ring-accent/20 outline-none text-sm"
+                    placeholder="At least 8 characters"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowRegPassword(!showRegPassword)}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-muted hover:text-foreground"
+                  >
+                    {showRegPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
               </div>
-            </div>
-            <p className="text-xs text-muted leading-relaxed">
-              Your personal data will be used to support your experience throughout this website,
-              to manage access to your account, and for other purposes described in our{' '}
-              <a href="/privacy-policy" className="text-accent hover:underline">privacy policy</a>.
-            </p>
-            {regError && <p className="text-sm text-accent font-medium">{regError}</p>}
-            {regSuccess && <p className="text-sm text-emerald-600 font-medium">{regSuccess}</p>}
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="w-full py-3.5 bg-primary text-white font-[var(--font-heading)] font-bold text-lg uppercase rounded-xl hover:bg-primary-light transition-colors"
-            >
-              {isLoading ? 'Registering...' : 'Register'}
-            </button>
-          </form>
+              <p className="text-xs text-muted leading-relaxed">
+                Your personal data will be used to support your experience throughout this website,
+                to manage access to your account, and for other purposes described in our{' '}
+                <a href="/privacy-policy" className="text-accent hover:underline">privacy policy</a>.
+              </p>
+              {regError && <p className="text-sm text-accent font-medium">{regError}</p>}
+              {regSuccess && <p className="text-sm text-emerald-600 font-medium">{regSuccess}</p>}
+              <button
+                type="submit"
+                disabled={isLoading}
+                className="w-full py-3.5 bg-primary text-white font-(--font-heading) text-lg uppercase rounded-xl hover:bg-primary-light transition-colors"
+              >
+                {isLoading ? 'Registering...' : 'Register'}
+              </button>
+            </form>
 
-          <div className="mt-8 p-6 bg-surface-alt rounded-xl">
-            <h3 className="font-semibold text-foreground mb-3">Why create an account?</h3>
-            <ul className="space-y-2 text-sm text-muted">
-              <li className="flex items-start gap-2">✓ Track your orders</li>
-              <li className="flex items-start gap-2">✓ Save your favourite items</li>
-              <li className="flex items-start gap-2">✓ Faster checkout experience</li>
-              <li className="flex items-start gap-2">✓ Exclusive member offers</li>
-            </ul>
-          </div>
-        </motion.div>
-      </div>
+            <div className="mt-8 p-6 bg-surface-alt rounded-xl">
+              <h3 className="font-semibold text-foreground mb-3">Why create an account?</h3>
+              <ul className="space-y-2 text-sm text-muted">
+                <li className="flex items-start gap-2">✓ Track your orders</li>
+                <li className="flex items-start gap-2">✓ Save your favourite items</li>
+                <li className="flex items-start gap-2">✓ Faster checkout experience</li>
+                <li className="flex items-start gap-2">✓ Exclusive member offers</li>
+              </ul>
+            </div>
+          </>
+        )}
+
+        <div className="mt-6 border-t border-border pt-5 text-center text-sm text-muted">
+          {authMode === 'register' ? 'Already registered?' : 'New here?'}{' '}
+          <button
+            type="button"
+            onClick={() => switchAuthMode(authMode === 'register' ? 'login' : 'register')}
+            className="font-semibold text-accent hover:text-accent-dark"
+          >
+            {authMode === 'register' ? 'Log In' : 'Create Account'}
+          </button>
+        </div>
+      </motion.div>
     </div>
   );
 }

@@ -5,6 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { getSportRoute, normalizeSportKey } from '@/lib/data/clubSportRoutes';
 
 // Fallback data — used while loading or if the API fails
 const fallbackCategories = [
@@ -16,22 +17,6 @@ const fallbackCategories = [
   { name: 'Padel', image: '', href: '/store/clubs/padel' },
   { name: 'Darts', image: '', href: '/store/clubs/dartsteams' },
 ];
-
-// Map sport slugs → route paths and display labels
-const sportRouteMap: Record<string, { label: string; href: string }> = {
-  rugby: { label: 'Rugby Clubs', href: '/store/clubs/rugbyclubs' },
-  football: { label: 'Football Clubs', href: '/store/clubs/footballclubs' },
-  softball: { label: 'Softball', href: '/store/clubs/softball-teams' },
-  korfball: { label: 'Korfball', href: '/store/clubs/korfball' },
-  netball: { label: 'Netball', href: '/store/clubs/netball' },
-  padel: { label: 'Padel', href: '/store/clubs/padel' },
-  horseball: { label: 'Horseball', href: '/store/clubs/horseball' },
-  darts: { label: 'Darts', href: '/store/clubs/dartsteams' },
-  charities: { label: 'Charities', href: '/store/clubs/charities' },
-  cricket: { label: 'Cricket', href: '/store/clubs/cricket' },
-  corporatestash: { label: 'Corporate Stash', href: '/store/clubs/corporatestash' },
-  yourtradestash: { label: 'Your Trade Stash', href: '/store/clubs/yourtradestash' },
-};
 
 interface SportCategory {
   name: string;
@@ -50,22 +35,25 @@ export function SportCarousel() {
         const data = await res.json();
         const clubs = data.clubs ?? [];
 
-        // Group clubs by sport and pick the first club's logo as the sport image
-        const sportMap: Record<string, string> = {};
+        // Group clubs by sport and keep first logo + first club href as fallback route.
+        const sportMap: Record<string, { image: string; fallbackHref: string }> = {};
         for (const club of clubs) {
-          if (!sportMap[club.sport] && club.logoUrl) {
-            sportMap[club.sport] = club.logoUrl;
+          const sportKey = normalizeSportKey(club.sport);
+          if (!sportMap[sportKey]) {
+            sportMap[sportKey] = {
+              image: club.logoUrl || '',
+              fallbackHref: club.href || '/store/clubs',
+            };
+          } else if (!sportMap[sportKey].image && club.logoUrl) {
+            sportMap[sportKey].image = club.logoUrl;
           }
         }
 
         // Build the carousel items from actual sports in the database
         const dynamicCategories: SportCategory[] = Object.entries(sportMap).map(
-          ([sport, image]) => {
-            const route = sportRouteMap[sport] || {
-              label: sport.charAt(0).toUpperCase() + sport.slice(1),
-              href: `/store/clubs/${sport}`,
-            };
-            return { name: route.label, image, href: route.href };
+          ([sport, meta]) => {
+            const route = getSportRoute(sport, meta.fallbackHref);
+            return { name: route.label, image: meta.image, href: route.href };
           }
         );
 

@@ -2,11 +2,21 @@ import { redirect } from 'next/navigation';
 import { getAdminSession } from '@/lib/admin/session';
 import { AdminLoginForm } from '@/components/admin/AdminLoginForm';
 
-export default async function AdminAuthPage() {
+function getSafeNextPath(nextPath?: string): string {
+  if (!nextPath) return '/admin';
+  return nextPath.startsWith('/admin') ? nextPath : '/admin';
+}
+
+export default async function AdminAuthPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ next?: string }>;
+}) {
   const session = await getAdminSession();
+  const { next } = await searchParams;
 
   if (session) {
-    redirect('/admin');
+    redirect(getSafeNextPath(next));
   }
 
   return <AdminLoginForm />;

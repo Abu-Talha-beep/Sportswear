@@ -12,6 +12,7 @@ interface Banner {
   cta_text: string;
   cta_href: string;
   gradient: string;
+  image_url?: string;
 }
 
 const defaultBanners: Banner[] = [
@@ -63,6 +64,7 @@ export function HeroBannerSlider() {
         const data = await res.json();
         if (data.banners && data.banners.length > 0) {
           setBanners(data.banners);
+          setCurrent(0);
         }
       } catch {
         // fallback to default
@@ -108,6 +110,16 @@ export function HeroBannerSlider() {
           transition={{ duration: 0.5, ease: 'easeInOut' }}
           className={`absolute inset-0 bg-gradient-to-br ${banners[current].gradient || 'from-primary to-accent'}`}
         >
+          {banners[current].image_url ? (
+            <div
+              className="absolute inset-0 bg-center bg-cover"
+              style={{ backgroundImage: `url(${banners[current].image_url})` }}
+            />
+          ) : null}
+
+          {/* Improve text contrast regardless of image brightness */}
+          <div className="absolute inset-0 bg-black/35" />
+
           {/* Decorative elements */}
           <div className="absolute inset-0">
             <div className="absolute top-10 right-10 w-96 h-96 bg-white/5 rounded-full blur-3xl" />

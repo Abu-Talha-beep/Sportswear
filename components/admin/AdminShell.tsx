@@ -4,13 +4,9 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useSyncExternalStore } from 'react';
 import {
-  BarChart3,
   FileText,
   LayoutDashboard,
-  Megaphone,
   Package,
-  Settings,
-  ShieldCheck,
   Shirt,
   ShoppingCart,
   Users,
@@ -31,12 +27,7 @@ function getNavIcon(href: string) {
   if (href.startsWith('/admin/orders')) return ShoppingCart;
   if (href.startsWith('/admin/clubs')) return Shirt;
   if (href.startsWith('/admin/customers')) return Users;
-  if (href.startsWith('/admin/stash-builder')) return Settings;
   if (href.startsWith('/admin/content')) return FileText;
-  if (href.startsWith('/admin/marketing')) return Megaphone;
-  if (href.startsWith('/admin/analytics')) return BarChart3;
-  if (href.startsWith('/admin/settings')) return Settings;
-  if (href.startsWith('/admin/staff')) return ShieldCheck;
   return LayoutDashboard;
 }
 

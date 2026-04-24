@@ -39,6 +39,9 @@ export default function AdminContentPage() {
   const [tab, setTab] = useState<'banners' | 'announcements'>('banners');
   const [announcements, setAnnouncements] = useState<string[]>([]);
   const [newAnnouncement, setNewAnnouncement] = useState('');
+  const [announcementsLoading, setAnnouncementsLoading] = useState(false);
+  const [announcementsSaving, setAnnouncementsSaving] = useState(false);
+  const [announcementsError, setAnnouncementsError] = useState('');
 
   const fetchBanners = useCallback(async () => {
     setLoading(true);
@@ -52,6 +55,33 @@ export default function AdminContentPage() {
 
   // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { fetchBanners(); }, [fetchBanners]);
+
+  const fetchAnnouncements = useCallback(async () => {
+    setAnnouncementsLoading(true);
+    setAnnouncementsError('');
+    try {
+      const response = await fetch('/api/admin/announcements');
+      const data = (await response.json().catch(() => null)) as
+        | { messages?: string[]; error?: string }
+        | null;
+
+      if (!response.ok) {
+        setAnnouncements([]);
+        setAnnouncementsError(data?.error || 'Failed to load announcements.');
+        return;
+      }
+
+      setAnnouncements(data?.messages ?? []);
+    } catch {
+      setAnnouncements([]);
+      setAnnouncementsError('Failed to load announcements.');
+    } finally {
+      setAnnouncementsLoading(false);
+    }
+  }, []);
+
+  // eslint-disable-next-line react-hooks/set-state-in-effect
+  useEffect(() => { fetchAnnouncements(); }, [fetchAnnouncements]);
 
   const handleSaveBanner = async () => {
     if (!editing) return;
@@ -83,6 +113,33 @@ export default function AdminContentPage() {
     if (!newAnnouncement.trim()) return;
     setAnnouncements([...announcements, newAnnouncement.trim()]);
     setNewAnnouncement('');
+  };
+
+  const saveAnnouncements = async () => {
+    setAnnouncementsSaving(true);
+    setAnnouncementsError('');
+    try {
+      const response = await fetch('/api/admin/announcements', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ messages: announcements }),
+      });
+
+      const data = (await response.json().catch(() => null)) as
+        | { messages?: string[]; error?: string }
+        | null;
+
+      if (!response.ok) {
+        setAnnouncementsError(data?.error || 'Failed to save announcements.');
+        return;
+      }
+
+      setAnnouncements(data?.messages ?? []);
+    } catch {
+      setAnnouncementsError('Failed to save announcements.');
+    } finally {
+      setAnnouncementsSaving(false);
+    }
   };
 
   // ── BANNER EDIT ──
@@ -249,16 +306,32 @@ export default function AdminContentPage() {
           <h2 className="font-[var(--font-heading)] text-lg font-bold text-primary uppercase">Announcement Bar Messages</h2>
           <p className="text-sm text-muted">These messages scroll across the top of the website.</p>
 
+          {announcementsError ? (
+            <p className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+              {announcementsError}
+            </p>
+          ) : null}
+
           <div className="space-y-2">
-            {announcements.map((msg, i) => (
-              <div key={i} className="flex items-center gap-3 bg-surface-alt rounded-xl px-4 py-2.5">
-                <GripVertical className="w-4 h-4 text-muted/40 cursor-grab" />
-                <span className="flex-1 text-sm">{msg}</span>
-                <button onClick={() => setAnnouncements(announcements.filter((_, idx) => idx !== i))} className="text-muted hover:text-red-500">
-                  <X className="w-4 h-4" />
-                </button>
+            {announcementsLoading ? (
+              <div className="flex items-center justify-center rounded-xl bg-surface-alt py-8">
+                <Loader2 className="h-5 w-5 animate-spin text-accent" />
               </div>
-            ))}
+            ) : announcements.length === 0 ? (
+              <p className="rounded-xl bg-surface-alt px-4 py-3 text-sm text-muted">
+                No announcement messages saved yet.
+              </p>
+            ) : (
+              announcements.map((msg, i) => (
+                <div key={i} className="flex items-center gap-3 bg-surface-alt rounded-xl px-4 py-2.5">
+                  <GripVertical className="w-4 h-4 text-muted/40 cursor-grab" />
+                  <span className="flex-1 text-sm">{msg}</span>
+                  <button onClick={() => setAnnouncements(announcements.filter((_, idx) => idx !== i))} className="text-muted hover:text-red-500">
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              ))
+            )}
           </div>
 
           <div className="flex gap-2">
@@ -270,8 +343,21 @@ export default function AdminContentPage() {
             </button>
           </div>
 
-          <button className="px-5 py-2.5 bg-primary text-white rounded-xl text-sm font-semibold hover:bg-primary-light">
-            <Save className="w-4 h-4 inline mr-1.5" /> Save Announcements
+          <button
+            type="button"
+            onClick={saveAnnouncements}
+            disabled={announcementsSaving}
+            className="px-5 py-2.5 bg-primary text-white rounded-xl text-sm font-semibold hover:bg-primary-light disabled:opacity-70"
+          >
+            {announcementsSaving ? (
+              <>
+                <Loader2 className="w-4 h-4 inline mr-1.5 animate-spin" /> Saving...
+              </>
+            ) : (
+              <>
+                <Save className="w-4 h-4 inline mr-1.5" /> Save Announcements
+              </>
+            )}
           </button>
         </div>
       )}

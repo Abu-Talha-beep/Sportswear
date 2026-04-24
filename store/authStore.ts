@@ -44,6 +44,11 @@ export const useAuthStore = create<AuthStore>()((set) => ({
 
   initialize: async () => {
     set({ isLoading: true, authError: '' });
+    if (!supabase) {
+      set({ user: null, isLoggedIn: false, isLoading: false, authError: 'Supabase environment variables are missing.' });
+      return;
+    }
+
     const { data, error } = await supabase.auth.getSession();
 
     if (error) {
@@ -77,6 +82,11 @@ export const useAuthStore = create<AuthStore>()((set) => ({
 
   login: async (email, password) => {
     set({ isLoading: true, authError: '' });
+    if (!supabase) {
+      set({ isLoading: false, authError: 'Supabase environment variables are missing.' });
+      return false;
+    }
+
     const { data, error } = await supabase.auth.signInWithPassword({ email, password });
 
     if (error || !data.user) {
@@ -95,6 +105,11 @@ export const useAuthStore = create<AuthStore>()((set) => ({
 
   register: async (email, password, name) => {
     set({ isLoading: true, authError: '' });
+    if (!supabase) {
+      set({ isLoading: false, authError: 'Supabase environment variables are missing.' });
+      return false;
+    }
+
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
@@ -121,12 +136,19 @@ export const useAuthStore = create<AuthStore>()((set) => ({
       return true;
     }
 
-    set({ isLoading: false, authError: 'Check your email to confirm your account.' });
+    // Registration succeeded but this project requires email confirmation.
+    // Keep authError empty so UI can show a success/info message instead of an error state.
+    set({ isLoading: false, authError: '' });
     return true;
   },
 
   logout: async () => {
     set({ isLoading: true, authError: '' });
+    if (!supabase) {
+      set({ user: null, isLoggedIn: false, isLoading: false, authError: '' });
+      return;
+    }
+
     const { error } = await supabase.auth.signOut();
     if (error) {
       set({ isLoading: false, authError: error.message });
