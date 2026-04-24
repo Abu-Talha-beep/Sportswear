@@ -1,26 +1,150 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+/* ═══════════════════════════════════════════
+   DESIGN SYSTEM — Your Club Stash
+   Tailwind v4 @theme + custom utilities
+   ═══════════════════════════════════════════ */
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  /* Brand Colors */
+  --color-primary: #1a1a2e;
+  --color-primary-light: #2d2d4a;
+  --color-primary-dark: #0f0f1a;
+  --color-accent: #e63946;
+  --color-accent-dark: #c5303c;
+  --color-accent-light: #ff4d5a;
+
+  /* Neutrals */
+  --color-background: #f8f9fa;
+  --color-foreground: #111827;
+  --color-surface: #ffffff;
+  --color-surface-alt: #f1f3f5;
+  --color-muted: #6b7280;
+  --color-border: #e5e7eb;
+  --color-border-light: #f0f0f0;
+
+  /* Semantic */
+  --color-success: #10b981;
+  --color-warning: #f59e0b;
+  --color-info: #3b82f6;
+
+  /* Fonts */
+  --font-heading: 'Barlow Condensed', sans-serif;
+  --font-body: 'DM Sans', sans-serif;
+
+  /* Spacing / Sizing */
+  --radius-sm: 0.375rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+  --radius-full: 9999px;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+/* ── BASE STYLES ── */
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background-color: var(--color-background);
+  color: var(--color-foreground);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-heading);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-track {
+  background: var(--color-background);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-primary-light);
+  border-radius: var(--radius-full);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-primary);
+}
+
+/* ── ANNOUNCEMENT BAR TICKER ── */
+@keyframes ticker {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+.animate-ticker {
+  animation: ticker 30s linear infinite;
+}
+.animate-ticker:hover {
+  animation-play-state: paused;
+}
+
+/* ── CUSTOM UTILITIES ── */
+
+/* Glassmorphism card */
+.glass {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+/* Category tile overlay gradient */
+.tile-overlay {
+  background: linear-gradient(
+    to top,
+    rgba(26, 26, 46, 0.85) 0%,
+    rgba(26, 26, 46, 0.3) 40%,
+    transparent 100%
+  );
+}
+
+/* Hero gradient */
+.hero-gradient {
+  background: linear-gradient(135deg, #1a1a2e 0%, #2d2d4a 50%, #e63946 100%);
+}
+
+/* Shimmer loading animation */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.skeleton {
+  background: linear-gradient(90deg, #e5e7eb 25%, #f3f4f6 50%, #e5e7eb 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+}
+
+/* Sport badge pulse */
+@keyframes badge-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(230, 57, 70, 0.4); }
+  50% { box-shadow: 0 0 0 8px rgba(230, 57, 70, 0); }
+}
+
+.badge-pulse {
+  animation: badge-pulse 2s ease-in-out infinite;
+}
+
+/* Hide scrollbar for carousel */
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* Focus ring */
+*:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
 }

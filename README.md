@@ -1,36 +1,75 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Your Club Stash
 
-## Getting Started
+Next.js storefront + admin panel for Your Club Stash.
 
-First, run the development server:
+## Admin Auth Stack
+
+- Next.js App Router
+- Supabase PostgreSQL (`admin_users` table)
+- `bcryptjs` password hash verification
+- Signed HTTP-only session cookie
+
+## Local Setup
+
+1. Install dependencies:
+
+```bash
+npm install
+```
+
+2. Create environment file:
+
+```bash
+cp .env.example .env.local
+```
+
+3. Fill these required values in `.env.local`:
+
+- `NEXT_PUBLIC_SUPABASE_URL`
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+- `SUPABASE_SERVICE_ROLE_KEY`
+- `ADMIN_SESSION_SECRET`
+
+4. Run SQL migrations in Supabase SQL editor (in order):
+
+- `supabase/sql/001_admin_users.sql`
+- `supabase/sql/002_full_schema.sql`
+
+5. Generate a password hash:
+
+```bash
+npm run admin:hash-password -- "YourStrongPassword123!"
+```
+
+6. Insert first admin user in Supabase SQL editor:
+
+```sql
+insert into public.admin_users (email, full_name, role, password_hash)
+values (
+	'admin@yourclubstash.co.uk',
+	'Super Admin',
+	'super-admin',
+	'$2b$12$replace_with_output_from_hash_command'
+);
+```
+
+7. Seed initial storefront/admin data:
+
+```bash
+node seed.js
+```
+
+8. Start app:
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+9. Open admin login:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- `http://localhost:3000/admin/login`
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Notes
 
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- Admin routes are protected by `proxy.ts` and server-side session checks in `app/admin/layout.tsx`.
+- `SUPABASE_SERVICE_ROLE_KEY` must stay server-side only.
